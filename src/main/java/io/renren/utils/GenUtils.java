@@ -33,27 +33,28 @@ public class GenUtils {
 
     private static String currentTableName;
 
+    public static Map<String,String> packages = new HashMap<>();
+
     public static List<String> getTemplates() {
         List<String> templates = new ArrayList<String>();
         templates.add("template/Entity.java.vm");
         templates.add("template/Dao.xml.vm");
+//        templates.add("template/menu.sql.vm");
 
-        templates.add("template/menu.sql.vm");
-
-        templates.add("template/Service.java.vm");
-        templates.add("template/ServiceImpl.java.vm");
-        templates.add("template/Controller.java.vm");
+//        templates.add("template/Service.java.vm");
+//        templates.add("template/ServiceImpl.java.vm");
+//        templates.add("template/Controller.java.vm");
         templates.add("template/Dao.java.vm");
 
-        templates.add("template/index.vue.vm");
-        templates.add("template/add-or-update.vue.vm");
-        if (MongoManager.isMongo()) {
-            // mongo不需要mapper、sql   实体类需要替换
-            templates.remove(0);
-            templates.remove(1);
-            templates.remove(2);
-            templates.add("template/MongoEntity.java.vm");
-        }
+//        templates.add("template/index.vue.vm");
+//        templates.add("template/add-or-update.vue.vm");
+//        if (MongoManager.isMongo()) {
+//            // mongo不需要mapper、sql   实体类需要替换
+//            templates.remove(0);
+//            templates.remove(1);
+//            templates.remove(2);
+//            templates.add("template/MongoEntity.java.vm");
+//        }
         return templates;
     }
 
@@ -66,12 +67,13 @@ public class GenUtils {
     /**
      * 生成代码
      */
-    public static void generatorCode(Map<String, String> table,
-                                     List<Map<String, String>> columns, ZipOutputStream zip) {
+    public static void generatorCode(String dbName, Map<String, String> table,
+        List<Map<String, String>> columns, ZipOutputStream zip) {
         //配置信息
         Configuration config = getConfig();
         boolean hasBigDecimal = false;
         boolean hasList = false;
+        boolean hasDate = false;
         //表信息
         TableEntity tableEntity = new TableEntity();
         tableEntity.setTableName(table.get("tableName"));
@@ -106,9 +108,12 @@ public class GenUtils {
             if (!hasList && "array".equals(columnEntity.getExtra())) {
                 hasList = true;
             }
+            if (!hasDate && attrType.equals("Date")) {
+                hasDate = true;
+            }
             //是否主键
-            if ("PRI".equalsIgnoreCase(column.get("columnKey")) && tableEntity.getPk() == null) {
-                tableEntity.setPk(columnEntity);
+            if ("PRI".equalsIgnoreCase(column.get("columnKey"))) {
+                tableEntity.addPk(columnEntity);
             }
 
             columsList.add(columnEntity);
@@ -117,7 +122,7 @@ public class GenUtils {
 
         //没主键，则第一个字段为主键
         if (tableEntity.getPk() == null) {
-            tableEntity.setPk(tableEntity.getColumns().get(0));
+            tableEntity.addPk(tableEntity.getColumns().get(0));
         }
 
         //设置velocity资源加载器
@@ -131,14 +136,16 @@ public class GenUtils {
         map.put("tableName", tableEntity.getTableName());
         map.put("comments", tableEntity.getComments());
         map.put("pk", tableEntity.getPk());
+        map.put("pkCnt", tableEntity.getPk().size());
         map.put("className", tableEntity.getClassName());
         map.put("classname", tableEntity.getClassname());
         map.put("pathName", tableEntity.getClassname().toLowerCase());
         map.put("columns", tableEntity.getColumns());
         map.put("hasBigDecimal", hasBigDecimal);
+        map.put("hasDate", hasDate);
         map.put("hasList", hasList);
         map.put("mainPath", mainPath);
-        map.put("package", config.getString("package"));
+        map.put("package", getPackage(config,dbName));
         map.put("moduleName", config.getString("moduleName"));
         map.put("author", config.getString("author"));
         map.put("email", config.getString("email"));
@@ -155,7 +162,7 @@ public class GenUtils {
 
             try {
                 //添加到zip
-                zip.putNextEntry(new ZipEntry(getFileName(template, tableEntity.getClassName(), config.getString("package"), config.getString("moduleName"))));
+                zip.putNextEntry(new ZipEntry(getFileName(template, tableEntity.getClassName(), getPackage(config,dbName), config.getString("moduleName"))));
                 IOUtils.write(sw.toString(), zip, "UTF-8");
                 IOUtils.closeQuietly(sw);
                 zip.closeEntry();
@@ -168,19 +175,19 @@ public class GenUtils {
     /**
      * 生成mongo其他实体类的代码
      */
-    public static void generatorMongoCode(String[] tableNames, ZipOutputStream zip) {
+    public static void generatorMongoCode(String dbName, String[] tableNames, ZipOutputStream zip) {
         for (String tableName : tableNames) {
             MongoDefinition info = MongoManager.getInfo(tableName);
             currentTableName = tableName;
             List<MongoGeneratorEntity> childrenInfo = info.getChildrenInfo(tableName);
             childrenInfo.remove(0);
             for (MongoGeneratorEntity mongoGeneratorEntity : childrenInfo) {
-                generatorChildrenBeanCode(mongoGeneratorEntity, zip);
+                generatorChildrenBeanCode(dbName,mongoGeneratorEntity, zip);
             }
         }
     }
 
-    private static void generatorChildrenBeanCode(MongoGeneratorEntity mongoGeneratorEntity, ZipOutputStream zip) {
+    private static void generatorChildrenBeanCode(String dbName,MongoGeneratorEntity mongoGeneratorEntity, ZipOutputStream zip) {
         //配置信息
         Configuration config = getConfig();
         boolean hasList = false;
@@ -235,7 +242,7 @@ public class GenUtils {
         map.put("columns", tableEntity.getColumns());
         map.put("hasList", hasList);
         map.put("mainPath", mainPath);
-        map.put("package", config.getString("package"));
+        map.put("package", getPackage(config,dbName));
         map.put("moduleName", config.getString("moduleName"));
         map.put("author", config.getString("author"));
         map.put("email", config.getString("email"));
@@ -251,7 +258,7 @@ public class GenUtils {
             tpl.merge(context, sw);
             try {
                 //添加到zip
-                zip.putNextEntry(new ZipEntry(getFileName(template, tableEntity.getClassName(), config.getString("package"), config.getString("moduleName"))));
+                zip.putNextEntry(new ZipEntry(getFileName(template, tableEntity.getClassName(), getPackage(config,dbName), config.getString("moduleName"))));
                 IOUtils.write(sw.toString(), zip, "UTF-8");
                 IOUtils.closeQuietly(sw);
                 zip.closeEntry();
@@ -260,6 +267,15 @@ public class GenUtils {
             }
         }
 
+    }
+
+    private static String getPackage(Configuration config,String dbName){
+        String str = packages.get(dbName);
+        if(str==null){
+            str = config.getString("package");
+            packages.put(dbName,str);
+        }
+        return str;
     }
 
     /**
@@ -283,12 +299,21 @@ public class GenUtils {
         return columnToJava(tableName);
     }
 
+    private static Configuration config;
+
     /**
      * 获取配置信息
      */
     public static Configuration getConfig() {
         try {
-            return new PropertiesConfiguration("generator.properties");
+            if(config==null){
+                synchronized (GenUtils.class){
+                    if(config==null){
+                        config = new PropertiesConfiguration("generator.properties");
+                    }
+                }
+            }
+            return config;
         } catch (ConfigurationException e) {
             throw new RRException("获取配置文件失败，", e);
         }
@@ -298,53 +323,89 @@ public class GenUtils {
      * 获取文件名
      */
     public static String getFileName(String template, String className, String packageName, String moduleName) {
-        String packagePath = "main" + File.separator + "java" + File.separator;
-        if (StringUtils.isNotBlank(packageName)) {
-            packagePath += packageName.replace(".", File.separator) + File.separator + moduleName + File.separator;
-        }
-        if (template.contains("MongoChildrenEntity.java.vm")) {
-            return packagePath + "entity" + File.separator + "inner" + File.separator + currentTableName+ File.separator + splitInnerName(className)+ "InnerEntity.java";
-        }
+//        String packagePath = "main" + File.separator + "java" + File.separator;
+//        if (StringUtils.isNotBlank(packageName)) {
+//            packagePath += packageName.replace(".", File.separator) + File.separator + moduleName + File.separator;
+//        }
+        String path = className + File.separator;
+
         if (template.contains("Entity.java.vm") || template.contains("MongoEntity.java.vm")) {
-            return packagePath + "entity" + File.separator + className + "Entity.java";
+            return path + className + ".java";
         }
 
         if (template.contains("Dao.java.vm")) {
-            return packagePath + "dao" + File.separator + className + "Dao.java";
+            return path + className + "Mapper.java";
         }
 
         if (template.contains("Service.java.vm")) {
-            return packagePath + "service" + File.separator + className + "Service.java";
+            return path + className + "Service.java";
         }
 
         if (template.contains("ServiceImpl.java.vm")) {
-            return packagePath + "service" + File.separator + "impl" + File.separator + className + "ServiceImpl.java";
+            return path + className + "ServiceImpl.java";
         }
 
         if (template.contains("Controller.java.vm")) {
-            return packagePath + "controller" + File.separator + className + "Controller.java";
+            return path + className + "Controller.java";
         }
 
         if (template.contains("Dao.xml.vm")) {
-            return "main" + File.separator + "resources" + File.separator + "mapper" + File.separator + moduleName + File.separator + className + "Dao.xml";
-        }
-
-        if (template.contains("menu.sql.vm")) {
-            return className.toLowerCase() + "_menu.sql";
-        }
-
-        if (template.contains("index.vue.vm")) {
-            return "main" + File.separator + "resources" + File.separator + "src" + File.separator + "views" + File.separator + "modules" +
-                    File.separator + moduleName + File.separator + className.toLowerCase() + ".vue";
-        }
-
-        if (template.contains("add-or-update.vue.vm")) {
-            return "main" + File.separator + "resources" + File.separator + "src" + File.separator + "views" + File.separator + "modules" +
-                    File.separator + moduleName + File.separator + className.toLowerCase() + "-add-or-update.vue";
+            return path + className + "Mapper.xml";
         }
 
         return null;
     }
+//    /**
+//     * 获取文件名
+//     */
+//    public static String getFileName(String template, String className, String packageName, String moduleName) {
+//        String packagePath = "main" + File.separator + "java" + File.separator;
+//        if (StringUtils.isNotBlank(packageName)) {
+//            packagePath += packageName.replace(".", File.separator) + File.separator + moduleName + File.separator;
+//        }
+//        if (template.contains("MongoChildrenEntity.java.vm")) {
+//            return packagePath + "entity" + File.separator + "inner" + File.separator + currentTableName+ File.separator + splitInnerName(className)+ "InnerEntity.java";
+//        }
+//        if (template.contains("Entity.java.vm") || template.contains("MongoEntity.java.vm")) {
+//            return packagePath + "entity" + File.separator + className + ".java";
+//        }
+//
+//        if (template.contains("Dao.java.vm")) {
+//            return packagePath + "mapper" + File.separator + className + "Mapper.java";
+//        }
+//
+//        if (template.contains("Service.java.vm")) {
+//            return packagePath + "service" + File.separator + className + "Service.java";
+//        }
+//
+//        if (template.contains("ServiceImpl.java.vm")) {
+//            return packagePath + "service" + File.separator + "impl" + File.separator + className + "ServiceImpl.java";
+//        }
+//
+//        if (template.contains("Controller.java.vm")) {
+//            return packagePath + "controller" + File.separator + className + "Controller.java";
+//        }
+//
+//        if (template.contains("Dao.xml.vm")) {
+//            return "main" + File.separator + "resources" + File.separator + "mapper" + File.separator + className + "Mapper.xml";
+//        }
+//
+//        if (template.contains("menu.sql.vm")) {
+//            return className.toLowerCase() + "_menu.sql";
+//        }
+//
+//        if (template.contains("index.vue.vm")) {
+//            return "main" + File.separator + "resources" + File.separator + "src" + File.separator + "views" + File.separator + "modules" +
+//                    File.separator + moduleName + File.separator + className.toLowerCase() + ".vue";
+//        }
+//
+//        if (template.contains("add-or-update.vue.vm")) {
+//            return "main" + File.separator + "resources" + File.separator + "src" + File.separator + "views" + File.separator + "modules" +
+//                    File.separator + moduleName + File.separator + className.toLowerCase() + "-add-or-update.vue";
+//        }
+//
+//        return null;
+//    }
 
     private static String splitInnerName(String name){
           name = name.replaceAll("\\.","_");

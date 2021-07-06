@@ -26,9 +26,11 @@ import java.util.Map;
  * @since 2018-07-24
  */
 public interface GeneratorDao {
+    List<String> dblist();
+
     List<Map<String, Object>> queryList(Map<String, Object> map);
 
-    Map<String, String> queryTable(String tableName);
+    Map<String, String> queryTable(Map<String, String> map);
 
-    List<Map<String, String>> queryColumns(String tableName);
+    List<Map<String, String>> queryColumns(Map<String, String> map);
 }

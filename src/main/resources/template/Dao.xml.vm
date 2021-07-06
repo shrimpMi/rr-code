@@ -1,14 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="${package}.${moduleName}.dao.${className}Dao">
+<mapper namespace="${package}.mapper.${className}Mapper">
 
-	<!-- 可根据自己的需求，是否要使用 -->
-    <resultMap type="${package}.${moduleName}.entity.${className}Entity" id="${classname}Map">
+    <resultMap type="${package}.entity.${className}" id="baseResultMap">
 #foreach($column in $columns)
         <result property="${column.attrname}" column="${column.columnName}"/>
 #end
     </resultMap>
 
+    <select id="getById" resultMap="baseResultMap">
+        SELECT #set($i=0)#foreach($column in $columns)#if($i > 0),#end#if($column.columnName != $column.attrname) $column.columnName $column.attrname #else $column.columnName#end#set($i=1)#end
+
+        FROM ${tableName}
+        WHERE #set($i=0)#foreach($column in $pk)#if($i > 0) AND#end $column.columnName = #{$column.attrname}#set($i=1)#end
+
+    </select>
+
+    <!--新增-->
+    <insert id="insertRecord" #if($pkCnt==1) keyProperty="#foreach($column in $pk)$column.attrname#end" useGeneratedKeys="true" #end>
+        INSERT INTO ${tableName}(#set($i=0)#foreach($column in $columns)#if($i > 0),#end ${column.columnName}#set($i=1)#end )
+        VALUES (#set($i=0)#foreach($column in $columns)#if($i > 0),#end #{${column.attrname}}#set($i=1)#end)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="updateRecord">
+        UPDATE ${tableName}
+        <set>
+#foreach($column in $columns)
+            <if test="${column.attrname} != null">
+                ${column.columnName} = #{${column.attrname}},
+            </if>
+#end
+        </set>
+        WHERE #set($i=0)#foreach($column in $pk)#if($i > 0) AND#end $column.columnName = #{$column.attrname}#set($i=1)#end
+
+    </update>
+
+    <delete id="deleteById" >
+        DELETE FROM ${tableName} WHERE#set($i=0)#foreach($column in $pk)#if($i > 0) AND#end $column.columnName = #{$column.attrname}#set($i=1)#end
+
+    </delete>
 
 </mapper>

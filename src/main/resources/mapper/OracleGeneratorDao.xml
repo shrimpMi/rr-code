@@ -60,4 +60,9 @@
         order by temp.column_id
 	</select>
 
+
+	<select id="dblist" resultType="String">
+		SELECT null
+	</select>
+
 </mapper>

@@ -1,5 +1,6 @@
 package io.renren.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ public class TableEntity {
 	//表的备注
 	private String comments;
 	//表的主键
-	private ColumnEntity pk;
+	private List<ColumnEntity> pk;
 	//表的列名(不包含主键)
 	private List<ColumnEntity> columns;
 	
@@ -36,11 +37,17 @@ public class TableEntity {
 	public void setComments(String comments) {
 		this.comments = comments;
 	}
-	public ColumnEntity getPk() {
+	public List<ColumnEntity> getPk() {
 		return pk;
 	}
-	public void setPk(ColumnEntity pk) {
+	public void setPk(List<ColumnEntity> pk) {
 		this.pk = pk;
+	}
+	public void addPk(ColumnEntity k) {
+		if(pk==null){
+			pk = new ArrayList<>();
+		}
+		pk.add(k);
 	}
 	public List<ColumnEntity> getColumns() {
 		return columns;

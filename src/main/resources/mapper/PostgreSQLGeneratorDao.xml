@@ -34,4 +34,8 @@
 			left join pg_constraint t3 on t2.attnum = t3.conkey[1] and t2.attrelid = t3.conrelid
 		where t1.relname = #{tableName} and t2.attrelid = t1.oid and t2.attnum>0
 	</select>
+
+	<select id="dblist" resultType="String">
+		SELECT null
+	</select>
 </mapper>

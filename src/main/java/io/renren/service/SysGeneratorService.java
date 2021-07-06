@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
@@ -37,6 +38,10 @@ public class SysGeneratorService {
     @Autowired
     private GeneratorDao generatorDao;
 
+    public List<String> dblist() {
+        return generatorDao.dblist();
+    }
+
 
     public PageUtils queryList(Query query) {
         Page<?> page = PageHelper.startPage(query.getPage(), query.getLimit());
@@ -48,28 +53,34 @@ public class SysGeneratorService {
         return new PageUtils(list, total, query.getLimit(), query.getPage());
     }
 
-    public Map<String, String> queryTable(String tableName) {
-        return generatorDao.queryTable(tableName);
+    public Map<String, String> queryTable(String dbName,String tableName) {
+        Map<String,String> map = new HashMap<>(2);
+        map.put("dbName",dbName);
+        map.put("tableName",tableName);
+        return generatorDao.queryTable(map);
     }
 
-    public List<Map<String, String>> queryColumns(String tableName) {
-        return generatorDao.queryColumns(tableName);
+    public List<Map<String, String>> queryColumns(String dbName,String tableName) {
+        Map<String,String> map = new HashMap<>(2);
+        map.put("dbName",dbName);
+        map.put("tableName",tableName);
+        return generatorDao.queryColumns(map);
     }
 
 
-    public byte[] generatorCode(String[] tableNames) {
+    public byte[] generatorCode(String dbName, String[] tableNames) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ZipOutputStream zip = new ZipOutputStream(outputStream);
         for (String tableName : tableNames) {
             //查询表信息
-            Map<String, String> table = queryTable(tableName);
+            Map<String, String> table = queryTable(dbName,tableName);
             //查询列信息
-            List<Map<String, String>> columns = queryColumns(tableName);
+            List<Map<String, String>> columns = queryColumns(dbName,tableName);
             //生成代码
-            GenUtils.generatorCode(table, columns, zip);
+            GenUtils.generatorCode(dbName,table, columns, zip);
         }
         if (MongoManager.isMongo()) {
-            GenUtils.generatorMongoCode(tableNames, zip);
+            GenUtils.generatorMongoCode(dbName,tableNames, zip);
         }
 
 

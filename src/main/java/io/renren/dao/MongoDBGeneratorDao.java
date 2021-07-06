@@ -6,10 +6,12 @@ import io.renren.config.MongoManager;
 import io.renren.entity.mongo.MongoDefinition;
 import io.renren.factory.MongoDBCollectionFactory;
 import io.renren.utils.MongoScanner;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +33,8 @@ public class MongoDBGeneratorDao implements GeneratorDao {
     }
 
     @Override
-    public Map<String, String> queryTable(String tableName) {
+    public Map<String, String> queryTable(Map<String, String> map) {
+        String tableName = map.get("tableName");
         Map<String, String> result = new HashMap<>(4 * 4 / 3 + 1);
         result.put("engine", "");
         result.put("createTime", "");
@@ -42,7 +45,8 @@ public class MongoDBGeneratorDao implements GeneratorDao {
     }
 
     @Override
-    public List<Map<String, String>> queryColumns(String tableName) {
+    public List<Map<String, String>> queryColumns(Map<String, String> map) {
+        String tableName = map.get("tableName");
         MongoDefinition mongoDefinition = MongoManager.getInfo(tableName);
         if (mongoDefinition == null) {
             System.out.println(tableName);
@@ -52,5 +56,8 @@ public class MongoDBGeneratorDao implements GeneratorDao {
         return MongoTableInfoAdaptor.columnInfo(mongoDefinition);
     }
 
-
+    @Override
+    public List<String> dblist() {
+        return new ArrayList<>(0);
+    }
 }

@@ -87,4 +87,9 @@
 			a.NAME = #{tableName}
 			and sys.types.NAME != 'sysname'
 	</select>
+
+
+	<select id="dblist" resultType="String">
+		SELECT null
+	</select>
 </mapper>

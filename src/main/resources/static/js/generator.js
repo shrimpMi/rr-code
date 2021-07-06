@@ -35,17 +35,49 @@ $(function () {
     });
 });
 
+
 var vm = new Vue({
 	el:'#rrapp',
 	data:{
 		q:{
-			tableName: null
-		}
+			tableName: null,
+			dbName: null
+		},
+        db:[
+            'wuse_order','wuse_goods'
+        ],
+        cfg:{}
 	},
+    created:function(){
+        $.ajax({
+            url: 'sys/generator/dblist',
+            type: 'get',
+            dataType: 'json',
+            success: function (res) {
+                console.log(res)
+                vm.db = res.db;
+            },
+            error: function(xhr, errorType, error) {
+                alert('Ajax request error, errorType: ' + errorType +  ', error: ' + error)
+            }
+        });
+        $.ajax({
+            url: 'sys/generator/config',
+            type: 'get',
+            dataType: 'json',
+            success: function (res) {
+                vm.cfg = res.data;
+                console.log(res.data)
+            },
+            error: function(xhr, errorType, error) {
+                alert('Ajax request error, errorType: ' + errorType +  ', error: ' + error)
+            }
+        });
+    },
 	methods: {
 		query: function () {
 			$("#jqGrid").jqGrid('setGridParam',{ 
-                postData:{'tableName': vm.q.tableName},
+                postData:{'tableName': vm.q.tableName,'dbName': vm.q.dbName},
                 page:1 
             }).trigger("reloadGrid");
 		},
@@ -54,7 +86,10 @@ var vm = new Vue({
             if(tableNames == null){
                 return ;
             }
-            location.href = "sys/generator/code?tables=" + tableNames.join();
+            location.href = "sys/generator/code?tables=" + tableNames.join() +"&dbName=" + vm.q.dbName;
+		},
+        updateConfig: function() {
+            console.log(vm.cfg)
 		}
 	}
 });

@@ -4,7 +4,7 @@
 <mapper namespace="io.renren.dao.MySQLGeneratorDao">
 	<select id="queryList" resultType="map">
 		select table_name tableName, engine, table_comment tableComment, create_time createTime from information_schema.tables
-		where table_schema = (select database())
+		where table_schema = #{dbName}
 		<if test="tableName != null and tableName.trim() != ''">
 			and table_name like concat('%', #{tableName}, '%')
 		</if>
@@ -13,11 +13,33 @@
 
 	<select id="queryTable" resultType="map">
 		select table_name tableName, engine, table_comment tableComment, create_time createTime from information_schema.tables
-			where table_schema = (select database()) and table_name = #{tableName}
+			where table_schema = #{dbName} and table_name = #{tableName}
 	</select>
 
 	<select id="queryColumns" resultType="map">
 		select column_name columnName, data_type dataType, column_comment columnComment, column_key columnKey, extra from information_schema.columns
- 			where table_name = #{tableName} and table_schema = (select database()) order by ordinal_position
+ 			where table_name = #{tableName} and table_schema = #{dbName} order by ordinal_position
+	</select>
+<!--	<select id="queryList" resultType="map">-->
+<!--		select table_name tableName, engine, table_comment tableComment, create_time createTime from information_schema.tables-->
+<!--		where table_schema = (select database())-->
+<!--		<if test="tableName != null and tableName.trim() != ''">-->
+<!--			and table_name like concat('%', #{tableName}, '%')-->
+<!--		</if>-->
+<!--		order by create_time desc-->
+<!--	</select>-->
+
+<!--	<select id="queryTable" resultType="map">-->
+<!--		select table_name tableName, engine, table_comment tableComment, create_time createTime from information_schema.tables-->
+<!--			where table_schema = (select database()) and table_name = #{tableName}-->
+<!--	</select>-->
+
+<!--	<select id="queryColumns" resultType="map">-->
+<!--		select column_name columnName, data_type dataType, column_comment columnComment, column_key columnKey, extra from information_schema.columns-->
+<!-- 			where table_name = #{tableName} and table_schema = (select database()) order by ordinal_position-->
+<!--	</select>-->
+
+	<select id="dblist" resultType="String">
+		SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN ('mysql','performance_schema','information_schema')
 	</select>
 </mapper>

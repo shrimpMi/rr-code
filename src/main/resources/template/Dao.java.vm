@@ -1,17 +1,38 @@
-package ${package}.${moduleName}.dao;
+package ${package}.mapper;
 
-import ${package}.${moduleName}.entity.${className}Entity;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Mapper;
+import ${package}.entity.${className};
+import org.apache.ibatis.annotations.Param;
 
 /**
  * ${comments}
  * 
  * @author ${author}
- * @email ${email}
  * @date ${datetime}
  */
-@Mapper
-public interface ${className}Dao extends BaseMapper<${className}Entity> {
-	
+public interface ${className}Mapper {
+
+    /**
+    * 根据主键获取记录
+    * @return int
+    */
+    ${className} getById(#set($i=0)#foreach($column in $pk)#if($i > 0),#end @Param("${column.attrname}")$column.attrType $column.attrname#set($i=1)#end);
+
+    /**
+    * 新增记录
+    * @return int
+    */
+    int insertRecord(${className} record);
+
+    /**
+    * 根据主键修改记录
+    * @return int
+    */
+    int updateRecord(${className} update);
+
+    /**
+    * 根据主键获取记录
+    * @return int
+    */
+    int deleteById(#set($i=0)#foreach($column in $pk)#if($i > 0),#end @Param("${column.attrname}")$column.attrType $column.attrname#set($i=1)#end);
+
 }
