@@ -10,10 +10,7 @@
     </resultMap>
 
     <select id="getById" resultMap="baseResultMap">
-        SELECT #set($i=0)#foreach($column in $columns)#if($i > 0),#end#if($column.columnName != $column.attrname) $column.columnName $column.attrname #else $column.columnName#end#set($i=1)#end
-
-        FROM ${tableName}
-        WHERE #set($i=0)#foreach($column in $pk)#if($i > 0) AND#end $column.columnName = #{$column.attrname}#set($i=1)#end
+        SELECT#set($i=0)#foreach($column in $columns)#if($i > 0),#end $column.columnName#set($i=1)#end FROM ${tableName} WHERE #set($i=0)#foreach($column in $pk)#if($i > 0) AND#end $column.columnName = #{$column.attrname}#set($i=1)#end
 
     </select>
 
