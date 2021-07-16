@@ -323,34 +323,29 @@ public class GenUtils {
      * 获取文件名
      */
     public static String getFileName(String template, String className, String packageName, String moduleName) {
-//        String packagePath = "main" + File.separator + "java" + File.separator;
-//        if (StringUtils.isNotBlank(packageName)) {
-//            packagePath += packageName.replace(".", File.separator) + File.separator + moduleName + File.separator;
-//        }
-        String path = className + File.separator;
 
         if (template.contains("Entity.java.vm") || template.contains("MongoEntity.java.vm")) {
-            return path + className + ".java";
+            return "entity" + File.separator + className + ".java";
         }
 
         if (template.contains("Dao.java.vm")) {
-            return path + className + "Mapper.java";
+            return "mapper" + File.separator + className + "Mapper.java";
         }
 
         if (template.contains("Service.java.vm")) {
-            return path + className + "Service.java";
+            return "service" + File.separator + className + "Service.java";
         }
 
         if (template.contains("ServiceImpl.java.vm")) {
-            return path + className + "ServiceImpl.java";
+            return "service" + File.separator + "impl" + File.separator + className + "ServiceImpl.java";
         }
 
         if (template.contains("Controller.java.vm")) {
-            return path + className + "Controller.java";
+            return "controller" + File.separator + className + "Controller.java";
         }
 
         if (template.contains("Dao.xml.vm")) {
-            return path + className + "Mapper.xml";
+            return "xml" + File.separator + className + "Mapper.xml";
         }
 
         return null;
